@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BoardData, Status, Task, Project, SubTask, RoutineTask, FocusSession } from "@/types"
+import { BoardData, Status, Task, Project, SubTask, RoutineTask, FocusSession, Habit } from "@/types"
 
 // Initial Seed Data
 const initialData: BoardData = {
@@ -81,6 +81,7 @@ interface BoardContextProps {
   deleteTask: (taskId: string) => void
   setActiveProjectId: (projectId: string) => void
   addProject: (project: Omit<Project, "id">) => void
+  addHabit: (habit: Omit<Habit, "id" | "completedDates" | "streak" | "longestStreak" | "createdAt">) => void
   addDailyTask: (task: Omit<Task, "id" | "status" | "projectId">, date: string) => void
   toggleDailyTask: (taskId: string) => void
   toggleHabit: (habitId: string, date: string) => void
@@ -270,6 +271,22 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     }))
   }
 
+  const addHabit = (habitData: Omit<Habit, "id" | "completedDates" | "streak" | "longestStreak" | "createdAt">) => {
+    const newId = `h-${Math.random().toString(36).substr(2, 9)}`
+    const newHabit: Habit = {
+      ...habitData,
+      id: newId,
+      completedDates: [],
+      streak: 0,
+      longestStreak: 0,
+      createdAt: new Date().toISOString()
+    }
+    setBoardData(prev => ({
+      ...prev,
+      habits: [...prev.habits, newHabit]
+    }))
+  }
+
   const addDailyTask = (taskData: Omit<Task, "id" | "status" | "projectId">, date: string) => {
     const newId = `DT-${Math.floor(Math.random() * 10000) + 1000}`
     const newTask: Task = { 
@@ -352,7 +369,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   if (!isMounted) return null // Avoid hydration mismatch
 
   return (
-    <BoardContext.Provider value={{ boardData, setBoardData, addTask, updateTask, toggleSubTask, removeSubTask, addSubTask, deleteTask, setActiveProjectId, addProject, addDailyTask, toggleDailyTask, toggleHabit, toggleRoutineTask, addRoutineTask, addFocusSession }}>
+    <BoardContext.Provider value={{ boardData, setBoardData, addTask, updateTask, toggleSubTask, removeSubTask, addSubTask, deleteTask, setActiveProjectId, addProject, addHabit, addDailyTask, toggleDailyTask, toggleHabit, toggleRoutineTask, addRoutineTask, addFocusSession }}>
       {children}
     </BoardContext.Provider>
   )
