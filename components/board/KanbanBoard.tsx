@@ -82,7 +82,11 @@ export function KanbanBoard() {
         },
         tasks: {
           ...prev.tasks,
-          [activeId]: { ...prev.tasks[activeId], status: overColumnId as Status }
+          [activeId]: { 
+            ...prev.tasks[activeId], 
+            status: overColumnId as Status,
+            completedAt: overColumnId === "Done" ? new Date().toISOString() : undefined
+          }
         }
       }
     })
@@ -136,7 +140,7 @@ export function KanbanBoard() {
 
   return (
     <>
-      <div className="flex h-full w-full gap-6 p-6">
+      <div className="flex h-full w-full gap-4 md:gap-6 p-4 md:p-6 overflow-x-auto custom-scrollbar">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}

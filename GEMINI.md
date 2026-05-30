@@ -11,14 +11,16 @@ This project is a high-end, production-grade Task Management application built w
 - **Features:** 
     - **Multi-Project Management:** Create, switch, and manage multiple projects independently.
     - **Kanban Board:** High-precision, project-specific task tracking.
-    - **Daily Tasks:** A 30-day scheduling system with completion tracking and daily performance intelligence.
+    - **Daily Tasks:** A 30-day scheduling system with completion tracking, habits, routines, and daily performance intelligence.
+    - **Pomodoro Focus:** Integrated deep-work timer with fullscreen mode, ambient effects, and session tracking.
     - **Team Integration:** Project member management with role tracking and active task metrics.
+    - **Auto-Cleanup:** Tasks in the "Done" column are automatically removed from the board after 48 hours to maintain clarity, while remaining available in the "My Tasks" view.
 - **Theme:** Dark mode by default (configured in `app/layout.tsx`).
 
 ## Directory Structure
 
 - `app/`: Next.js App Router pages and layouts.
-  - `dashboard/`, `tasks/`, `daily/`, `team/`: Core application routes.
+  - `dashboard/`, `tasks/`, `daily/`, `team/`, `pomodoro/`: Core application routes.
 - `components/`: Modular component architecture.
   - `board/`: Kanban board logic.
   - `dashboard/`: Project-specific metrics view.
@@ -26,6 +28,7 @@ This project is a high-end, production-grade Task Management application built w
   - `task/`: Task forms, panels, and 'My Tasks'/'Daily Tasks' views.
   - `team/`: Team management and member profile views.
   - `project/`: Project creation forms.
+  - `pomodoro/`: Deep work timer and session management.
   - `ui/`: Reusable primitives (Button, Badge, Card, SlideOver).
 - `context/`: Application state providers.
 - `lib/`: Utility functions (e.g., `tailwind-merge` helpers).
@@ -54,7 +57,7 @@ npm run lint
 - **Component Patterns:** Prefer functional components with hooks. Use `"use client"` directive for interactive components.
 - **Styling:** Use Tailwind CSS 4 utility classes. Utilize `cn()` helper from `lib/utils.ts` for conditional class merging.
 - **Type Safety:** Maintain strict TypeScript definitions in `types/index.ts`. Avoid `any`.
-- **State Flow:** Centralized board state in `BoardContext`. Use the `useBoard` hook to access and update task data.
+- **State Flow:** Centralized board state in `BoardContext`. Use the `useBoard` hook to access and update task data. Tasks moved to "Done" receive a `completedAt` ISO timestamp, which is used for the 48-hour auto-cleanup logic.
 - **Persistence:** Board data is automatically persisted to `localStorage` under the key `routineTrackBoard`.
 - **UI/UX:** Focus on "Luxury" feel—ensure smooth transitions using `framer-motion`, high-end typography, and consistent spacing.
 - **Defensive Coding:** Always apply safety checks (e.g., `if (!boardData) return null`) when accessing context data to prevent runtime crashes during hydration.

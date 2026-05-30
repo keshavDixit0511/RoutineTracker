@@ -30,6 +30,7 @@ export interface Task {
   };
   dueDate?: string;
   subTasks?: SubTask[];
+  completedAt?: string; // ISO date string
 }
 
 export interface Column {

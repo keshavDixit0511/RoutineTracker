@@ -10,7 +10,7 @@ const initialData: BoardData = {
     "T-102": { id: "T-102", title: "Update the marketing website", status: "Todo", priority: "Medium", projectId: "p1" },
     "T-103": { id: "T-103", title: "Fix production payment bug", status: "In Progress", priority: "Urgent", projectId: "p2", assignee: { name: "Bob", avatar: "https://api.dicebear.com/7.x/notionists/svg?seed=Bob&backgroundColor=ffdfbf" } },
     "T-104": { id: "T-104", title: "Write API documentation", status: "In Review", priority: "Low", projectId: "p1" },
-    "T-105": { id: "T-105", title: "Setup CI/CD pipeline", status: "Done", priority: "Medium", projectId: "p2", assignee: { name: "Charlie" } },
+    "T-105": { id: "T-105", title: "Setup CI/CD pipeline", status: "Done", priority: "Medium", projectId: "p2", assignee: { name: "Charlie" }, completedAt: new Date().toISOString() },
   },
   columns: {
     "Todo": { id: "Todo", title: "To Do", taskIds: ["T-101", "T-102"] },
@@ -134,9 +134,61 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     }
   }, [boardData, isMounted])
 
+  // Auto-cleanup "Done" tasks from columns after 48 hours
+  React.useEffect(() => {
+    if (!isMounted) return
+
+    const cleanup = () => {
+      const now = new Date().getTime()
+      const fortyEightHoursInMs = 48 * 60 * 60 * 1000
+
+      setBoardData(prev => {
+        let hasChanges = false
+        const newColumns = { ...prev.columns }
+        const doneCol = newColumns["Done"]
+        
+        if (!doneCol) return prev
+
+        const updatedDoneTaskIds = doneCol.taskIds.filter(taskId => {
+          const task = prev.tasks[taskId]
+          if (task && task.status === "Done" && task.completedAt) {
+            const completedTime = new Date(task.completedAt).getTime()
+            if (now - completedTime > fortyEightHoursInMs) {
+              hasChanges = true
+              return false // Remove from column
+            }
+          }
+          return true
+        })
+
+        if (!hasChanges) return prev
+
+        return {
+          ...prev,
+          columns: {
+            ...prev.columns,
+            "Done": { ...doneCol, taskIds: updatedDoneTaskIds }
+          }
+        }
+      })
+    }
+
+    // Run once on mount and then every hour
+    cleanup()
+    const interval = setInterval(cleanup, 60 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [isMounted])
+
   const addTask = (taskData: Omit<Task, "id" | "status" | "projectId">, columnId: Status) => {
     const newId = `T-${Math.floor(Math.random() * 1000) + 200}`
-    const newTask: Task = { ...taskData, id: newId, status: columnId, projectId: boardData.activeProjectId, subTasks: taskData.subTasks || [] }
+    const newTask: Task = { 
+      ...taskData, 
+      id: newId, 
+      status: columnId, 
+      projectId: boardData.activeProjectId, 
+      subTasks: taskData.subTasks || [],
+      completedAt: columnId === "Done" ? new Date().toISOString() : undefined
+    }
     
     setBoardData(prev => {
       const col = prev.columns[columnId]
@@ -158,11 +210,20 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       
       const newStatus = updates.status
       let newColumns = prev.columns
+      const finalUpdates = { ...updates }
 
       // If status changed, we need to move the task between columns
       if (newStatus && newStatus !== task.status) {
         const oldCol = prev.columns[task.status]
         const newCol = prev.columns[newStatus]
+        
+        // Handle completedAt
+        if (newStatus === "Done") {
+          finalUpdates.completedAt = new Date().toISOString()
+        } else {
+          finalUpdates.completedAt = undefined
+        }
+
         newColumns = {
           ...prev.columns,
           [task.status]: { ...oldCol, taskIds: oldCol.taskIds.filter(id => id !== taskId) },
@@ -174,7 +235,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         tasks: {
           ...prev.tasks,
-          [taskId]: { ...task, ...updates }
+          [taskId]: { ...task, ...finalUpdates }
         },
         columns: newColumns
       }
@@ -192,9 +253,23 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       
       // Auto-complete logic
       const allDone = updatedSubTasks.every(st => st.completed)
+      const newStatus = allDone ? "Done" : (task.status === "Done" ? "Todo" : task.status)
+      
       const updates: Partial<Task> = { 
         subTasks: updatedSubTasks,
-        status: allDone ? "Done" : (task.status === "Done" ? "Todo" : task.status)
+        status: newStatus,
+        completedAt: newStatus === "Done" && task.status !== "Done" ? new Date().toISOString() : (newStatus !== "Done" ? undefined : task.completedAt)
+      }
+
+      let newColumns = prev.columns
+      if (newStatus !== task.status) {
+        const oldCol = prev.columns[task.status]
+        const newCol = prev.columns[newStatus]
+        newColumns = {
+          ...prev.columns,
+          [task.status]: { ...oldCol, taskIds: oldCol.taskIds.filter(id => id !== taskId) },
+          [newStatus]: { ...newCol, taskIds: [...newCol.taskIds, taskId] }
+        }
       }
 
       return {
@@ -202,7 +277,8 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
         tasks: {
           ...prev.tasks,
           [taskId]: { ...task, ...updates }
-        }
+        },
+        columns: newColumns
       }
     })
   }
@@ -294,7 +370,8 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       id: newId, 
       status: "Todo", 
       projectId: "daily", // Special project ID for daily tasks
-      dailyDate: date 
+      dailyDate: date,
+      completedAt: undefined
     }
     
     setBoardData(prev => ({
@@ -307,11 +384,16 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     setBoardData(prev => {
       const task = prev.tasks[taskId]
       if (!task) return prev
+      const newStatus = task.status === "Done" ? "Todo" : "Done"
       return {
         ...prev,
         tasks: {
           ...prev.tasks,
-          [taskId]: { ...task, status: task.status === "Done" ? "Todo" : "Done" }
+          [taskId]: { 
+            ...task, 
+            status: newStatus,
+            completedAt: newStatus === "Done" ? new Date().toISOString() : undefined
+          }
         }
       }
     })
@@ -338,7 +420,12 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
         ...prev.routines,
         [type]: {
           ...prev.routines[type],
-          tasks: prev.routines[type].tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t)
+          tasks: prev.routines[type].tasks.map(t => {
+            if (t.id === taskId) {
+              return { ...t, completed: !t.completed }
+            }
+            return t
+          })
         }
       }
     }))

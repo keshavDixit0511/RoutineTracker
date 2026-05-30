@@ -36,7 +36,7 @@ export function Sidebar({ className, ...props }: React.HTMLAttributes<HTMLDivEle
   return (
     <div
       className={cn(
-        "flex h-full w-64 flex-col border-r border-border bg-surface",
+        "flex h-full w-full xl:w-64 flex-col border-r border-border bg-surface",
         className
       )}
       {...props}

@@ -24,9 +24,9 @@ export function KanbanColumn({ column, tasks, onTaskClick, onAddClick }: KanbanC
   })
 
   return (
-    <div className="flex h-full w-[340px] min-w-[340px] flex-col rounded-2xl bg-surface/30 border border-border/50 p-5 shadow-sm backdrop-blur-sm">
+    <div className="flex h-full w-[280px] min-w-[280px] md:w-[340px] md:min-w-[340px] flex-col rounded-2xl bg-surface/30 border border-border/50 p-4 md:p-5 shadow-sm backdrop-blur-sm">
       {/* Column Header */}
-      <div className="mb-6 flex items-center justify-between px-1">
+      <div className="mb-4 md:mb-6 flex items-center justify-between px-1">
         <div className="flex items-center gap-3">
           <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/90">
             {column.title}
