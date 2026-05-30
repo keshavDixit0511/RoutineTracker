@@ -23,7 +23,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={() => setIsMobileSidebarOpen(false)}
         title="Menu"
       >
-        <Sidebar className="w-full border-r-0" />
+        <Sidebar 
+          className="w-full border-r-0" 
+          onItemClick={() => setIsMobileSidebarOpen(false)} 
+        />
       </SlideOver>
 
       <div className="flex flex-1 flex-col overflow-hidden">

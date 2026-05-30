@@ -10,7 +10,11 @@ import { SlideOver } from "@/components/ui/SlideOver"
 import { ProjectForm } from "@/components/project/ProjectForm"
 import { Project } from "@/types"
 
-export function Sidebar({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  onItemClick?: () => void
+}
+
+export function Sidebar({ className, onItemClick, ...props }: SidebarProps) {
   const pathname = usePathname()
   const { boardData, setActiveProjectId, addProject } = useBoard()
   const [isProjectModalOpen, setIsProjectModalOpen] = React.useState(false)
@@ -22,6 +26,7 @@ export function Sidebar({ className, ...props }: React.HTMLAttributes<HTMLDivEle
   const handleAddProject = (projectData: Omit<Project, "id">) => {
     addProject(projectData)
     setIsProjectModalOpen(false)
+    if (onItemClick) onItemClick()
   }
 
   const items = [
@@ -60,6 +65,7 @@ export function Sidebar({ className, ...props }: React.HTMLAttributes<HTMLDivEle
               <Link
                 key={item.label}
                 href={item.href}
+                onClick={() => onItemClick?.()}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   isActive
@@ -91,7 +97,10 @@ export function Sidebar({ className, ...props }: React.HTMLAttributes<HTMLDivEle
             {projects.map((project) => (
               <button
                 key={project.id}
-                onClick={() => setActiveProjectId(project.id)}
+                onClick={() => {
+                  setActiveProjectId(project.id)
+                  onItemClick?.()
+                }}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   activeProjectId === project.id
